@@ -39,7 +39,8 @@ def data():
 
 
 def open_browser():
-    webbrowser.open("http://127.0.0.1:5000")
+    return
+    # webbrowser.open("http://127.0.0.1:5000")
 
 
 if __name__ == "__main__":
