@@ -70,33 +70,43 @@ def next_turn():
     return current_turn_number
 
 
+def assign_turn_numbers(prompts):
+    global current_turn_number
+    numbered = []
+    for p in prompts:
+        current_turn_number += 1
+        numbered.append(f'\n[turn: {current_turn_number}] {p}')
+    return numbered
+
+
+def renumber_turns():
+    global current_turn_number
+    current_turn_number = 0
+
+    renumbered = deque(maxlen=current_session_chat_cache.maxlen)
+
+    for entry in current_session_chat_cache:
+        current_turn_number += 1
+        renumbered.append(f'\n[turn: {current_turn_number}] {entry}')
+
+    current_session_chat_cache.clear()
+    current_session_chat_cache.extend(renumbered)
+
+
 async def message_history_cache(client, message):
     global current_session_chat_cache
 
     def build_user_prompt(author, nick, content, reply_to=None):
-        """Helper to format user messages (with optional reply)."""
         if reply_to == client.user.name:
             reply_to = None
 
-        turn = next_turn()
-
         if reply_to:
-            base = f'[turn: {turn}] {author} ({nick}): (Replying to: {reply_to}) "{content}"'
+            return f'{author} ({nick}): (Replying to: {reply_to}) "{content}"'
         else:
-            base = f'[turn: {turn}] {author} ({nick}): "{content}"'
-
-        return {
-            "role": "user",
-            "content": base
-        }
+            return f'{author} ({nick}): "{content}"'
 
     def build_assistant_prompt(content=""):
-        """Helper to format assistant messages."""
-        turn = next_turn()
-        return {
-            "role": "assistant",
-            "content": f'[turn: {turn}] {content}'
-        }
+        return f'SAM: {content}'
 
     async def process_message(msg):
         """Process a single Discord message into prompts."""
@@ -141,15 +151,16 @@ async def message_history_cache(client, message):
     if not current_session_chat_cache:
         logger.debug("Session Cache Not Found -- Creating")
         channel = client.get_channel(message.channel.id)
+
         history_prompts = []
         async for past_message in channel.history(limit=20):
             history_prompts.extend(await process_message(past_message))
 
-        current_session_chat_cache.extend(reversed(history_prompts))
+        current_session_chat_cache.extend(assign_turn_numbers(reversed(history_prompts)))
         logger.debug("Session Cache Created")
         return
 
     # Incremental update (no assistant prompt for user messages here)
     new_prompts = await process_message(message)
-    current_session_chat_cache.extend(new_prompts)
+    current_session_chat_cache.extend(assign_turn_numbers(new_prompts))
 

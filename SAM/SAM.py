@@ -59,26 +59,25 @@ async def sam_message(message_author_name, message_author_nickname, message_cont
     return split_response(cleaned)
 
 
-
 async def sam_converse(user_name, user_nickname, user_input):
     current_session_chat_cache = session_chat_cache()
 
-    chat_log = []
-    for message in current_session_chat_cache:
-        chat_log.append(message)
+    chat_log = list(current_session_chat_cache)
 
-    # Get everything except the last entry
-    chat_log_all_but_last = chat_log[:-1]
-    turn_number = len(chat_log_all_but_last) + 1
+    print("#########################################")
+    for message in chat_log:
+        print(message)
+    print("#########################################")
 
-    current_prompt = [{"role": "user", "content": f'[turn: {turn_number}] {user_name} ({user_nickname}): "{user_input}"'}]
+    chat_history = "".join(chat_log)
+
+    current_prompt = [{"role": "user", "content": chat_history}]
 
     full_prompt = (
         [
             {"role": "system", "content": SAM_personality},
             {"role": "system", "content": chat_history_system_prompt}
         ] +
-        chat_log_all_but_last +
         current_prompt
     )
 

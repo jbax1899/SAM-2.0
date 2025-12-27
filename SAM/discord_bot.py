@@ -136,6 +136,15 @@ async def send_tts(interaction_or_message, text, reply_target=None):
     os.remove(tts_file)
 
 
+class CachedBotMessage:
+    def __init__(self, bot_user, content):
+        self.author = bot_user          # The bot user
+        self.content = content          # Original content
+        self.clean_content = content    # Used in process_message
+        self.type = discord.MessageType.default  # Default type so process_message works
+        self.reference = None           # No reply reference
+
+
 async def llm_chat(message, username: str, user_nickname: str, message_content: str, message_attachments=None):
     if message_attachments is None:
         message_attachments = []
@@ -183,6 +192,9 @@ async def llm_chat(message, username: str, user_nickname: str, message_content: 
     if response == -1:
         return
 
+    # Send messages in parts but store the full response
+    full_response = " ".join(response)  # combine all parts into one string
+
     # response should have been split in the above function returns
     sent_message = None
     for i, part in enumerate(response):
@@ -193,6 +205,10 @@ async def llm_chat(message, username: str, user_nickname: str, message_content: 
 
     if is_tts_message:
         await send_tts(message, response[0], reply_target=sent_message)
+
+    # Add the full response to the cache as a single assistant message
+    cached_msg = CachedBotMessage(client.user, full_response)
+    await message_history_cache(client, cached_msg)
 
 
 def get_message_attachments(message):
