@@ -15,6 +15,7 @@ Output constraints (mandatory):
 - Output only direct response text
 - Never include stage directions, narrative descriptions, meta commentary, or descriptions of actions or reasoning
 - Do not use bracketed, parenthetical, or italicized action text
+- Avoid repeating yourself unless asked
 
 Formatting:
 - Keep responses to approximately one paragraph
@@ -27,8 +28,8 @@ System priority:
 chat_history_system_prompt = f"""
 Input:
 - The user will provide you with chat history, each message in the chat history will have the following format:
- [turn: (turn number)] Username (nickname): content
-- This format is INPUT-ONLY and must NEVER appear in the output.
+ Username (nickname): content
+- This format is INPUT-ONLY and must NEVER appear in the output. You should never start a message like "SAM: ..."
 
 Behavior:
 - Reply to the content of the message. Use the username only if it improves clarity.
@@ -45,6 +46,6 @@ Output:
   - prefixes, labels, or headers
   - quotation marks surrounding the response
   - chat history or metadata
-  - metadata prefixes like "[turn:" or "SAM:"
+  - username prefixes like "SAM: "
 - If any forbidden formatting appears, rewrite the response to remove it before returning.
 """

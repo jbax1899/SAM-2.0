@@ -79,15 +79,6 @@ def next_turn():
     return current_turn_number
 
 
-def assign_turn_numbers(prompts):
-    global current_turn_number
-    numbered = []
-    for p in prompts:
-        current_turn_number += 1
-        numbered.append(f'[turn: {current_turn_number}] {p}')
-    return numbered
-
-
 def renumber_turns():
     global current_turn_number
     current_turn_number = 0
@@ -95,8 +86,7 @@ def renumber_turns():
     renumbered = deque(maxlen=current_session_chat_cache.maxlen)
 
     for entry in current_session_chat_cache:
-        current_turn_number += 1
-        renumbered.append(f'[turn: {current_turn_number}] {entry}')
+        renumbered.append(entry)
 
     current_session_chat_cache.clear()
     current_session_chat_cache.extend(renumbered)
@@ -165,11 +155,11 @@ async def message_history_cache(client, message):
         async for past_message in channel.history(limit=20):
             history_prompts.extend(await process_message(past_message))
 
-        current_session_chat_cache.extend(assign_turn_numbers(reversed(history_prompts)))
+        current_session_chat_cache.extend(reversed(history_prompts))
         logger.debug("Session Cache Created")
         return
 
     # Incremental update (no assistant prompt for user messages here)
     new_prompts = await process_message(message)
-    current_session_chat_cache.extend(assign_turn_numbers(new_prompts))
+    current_session_chat_cache.extend(new_prompts)
 
