@@ -65,12 +65,16 @@ async def sam_message(message_author_name, message_author_nickname, message_cont
 async def sam_converse(user_name, user_nickname, user_input, image_file=None, message_attachments=None):
     current_session_chat_cache = session_chat_cache()
     chat_log = list(current_session_chat_cache)
-    chat_history = "".join(chat_log)
+    
+    # Keep assistant vs user turns distinct (LLMs are trained on role-tagged conversations)
+    def build_role_message(entry: str):
+        role = "assistant" if "] SAM:" in entry else "user"
+        return {"role": role, "content": entry}
 
     full_prompt = [
         {"role": "system", "content": SAM_personality},
         {"role": "system", "content": chat_history_system_prompt},
-        {"role": "user", "content": chat_history}
+        *[build_role_message(entry) for entry in chat_log] # Store an array of role-tagged turns
     ]
 
     model_to_use = sam_model_name
